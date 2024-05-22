@@ -1,0 +1,18 @@
+server:
+  port: 8888
+
+spring:
+  application:
+    name: microservice-config-server
+  cloud:
+    config:
+      server:
+        git:
+          uri: https://github.com/VictorR616/tienda-electrodomesticos-online.git
+          searchPaths: config-data
+          username: ${GIT_USERNAME}
+          password: ${GIT_PASSWORD}
+eureka:
+  client:
+    serviceUrl:
+      defaultZone: http://microservice-eureka-server:8761/eureka

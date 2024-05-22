@@ -1,0 +1,19 @@
+server:
+  port: 8081
+
+spring:
+  application:
+    name: microservice-products
+  jpa:
+    hibernate:
+      ddl-auto: update
+  datasource:
+    url: ${DB_URL}
+    username: ${DB_USER_NAME}
+    password: ${DB_PASSWORD}
+    database-platform: ${DB_PLATFORM}
+
+eureka:
+  client:
+    service-url:
+      defaultZone: http://microservice-eureka-server:8761/eureka

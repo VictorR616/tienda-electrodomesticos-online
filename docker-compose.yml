@@ -1,0 +1,189 @@
+services:
+  microservice-eureka-server:
+    container_name: microservice-eureka-server
+    build: ./microservice-eureka-server
+    mem_limit: 512m
+    ports:
+      - "8761:8761"
+    restart: always
+    networks:
+      - tienda-electrodomesticos-online-network
+
+  microservice-config-server:
+    container_name: microservice-config-server
+    build: ./microservice-config-server
+    mem_limit: 512m
+    environment:
+      - GIT_USERNAME=${GIT_USERNAME}
+      - GIT_PASSWORD=${GIT_PASSWORD}
+    ports:
+      - "8888:8888"
+    restart: always
+    depends_on:
+      - microservice-eureka-server
+    networks:
+      - tienda-electrodomesticos-online-network
+
+  microservice-gateway:
+    container_name: microservice-gateway
+    build: ./microservice-gateway
+    mem_limit: 512m
+    ports:
+      - "443:443"
+    restart: always
+    depends_on:
+      - microservice-eureka-server
+    networks:
+      - tienda-electrodomesticos-online-network
+
+  products-service-1:
+    container_name: products-service-1
+    build: ./microservice-products
+    mem_limit: 512m
+    ports:
+      - "8081:8081"
+    environment:
+      - DB_URL=${DB_URL_PRODUCTS_1}
+      - DB_USER_NAME=${DB_USER_NAME_PRODUCTS_1}
+      - DB_PASSWORD=${DB_PASSWORD_PRODUCTS_1}
+      - DB_PLATFORM=${DB_PLATFORM_PRODUCTS_1}
+      - EUREKA_INSTANCE_HOSTNAME=${EUREKA_INSTANCE_HOSTNAME_PRODUCTS_1}
+
+    restart: always
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8081/actuator/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    depends_on:
+      db_products:
+        condition: service_healthy
+    networks:
+      - tienda-electrodomesticos-online-network
+
+  products-service-2:
+    container_name: products-service-2
+    build: ./microservice-products
+    mem_limit: 512m
+    ports:
+      - "8082:8081"
+    environment:
+      - DB_URL=${DB_URL_PRODUCTS_2}
+      - DB_USER_NAME=${DB_USER_NAME_PRODUCTS_2}
+      - DB_PASSWORD=${DB_PASSWORD_PRODUCTS_2}
+      - DB_PLATFORM=${DB_PLATFORM_PRODUCTS_2}
+      - EUREKA_INSTANCE_HOSTNAME=${EUREKA_INSTANCE_HOSTNAME_PRODUCTS_2}
+    restart: always
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8081/actuator/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    depends_on:
+      db_products:
+        condition: service_healthy
+    networks:
+      - tienda-electrodomesticos-online-network
+
+  microservice-shoppingcart:
+    container_name: microservice-shoppingcart
+    build: ./microservice-shoppingcart
+    mem_limit: 512m
+    ports:
+      - "8083:8083"
+    environment:
+      - DB_URL=${DB_URL_SHOPPINGCART}
+      - DB_USER_NAME=${DB_USER_NAME_SHOPPINGCART}
+      - DB_PASSWORD=${DB_PASSWORD_SHOPPINGCART}
+      - DB_PLATFORM=${DB_PLATFORM_SHOPPINGCART}
+    restart: always
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8083/actuator/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    depends_on:
+      db_shoppingcart:
+        condition: service_healthy
+    networks:
+      - tienda-electrodomesticos-online-network
+
+  microservice-sales:
+    container_name: microservice-sales
+    build: ./microservice-sales
+    mem_limit: 512m
+    ports:
+      - "8084:8084"
+    environment:
+      - DB_URL=${DB_URL_SALES}
+      - DB_USER_NAME=${DB_USER_NAME_SALES}
+      - DB_PASSWORD=${DB_PASSWORD_SALES}
+      - DB_PLATFORM=${DB_PLATFORM_SALES}
+    restart: always
+    depends_on:
+      - microservice-shoppingcart
+      - db_sales
+    networks:
+      - tienda-electrodomesticos-online-network
+
+  db_products:
+    container_name: db_products
+    image: mysql:8.0.33
+    ports:
+      - "3306:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD_PRODUCTS}
+      MYSQL_DATABASE: ${MYSQL_DATABASE_PRODUCTS}
+    restart: always
+    volumes:
+      - db_products_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      timeout: 10s
+      retries: 10
+    networks:
+      - tienda-electrodomesticos-online-network
+
+  db_shoppingcart:
+    container_name: db_shoppingcart
+    image: mysql:8.0.33
+    ports:
+      - "3307:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD_SHOPPINGCART}
+      MYSQL_DATABASE: ${MYSQL_DATABASE_SHOPPINGCART}
+    restart: always
+    volumes:
+      - db_shoppingcart_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      timeout: 10s
+      retries: 10
+    networks:
+      - tienda-electrodomesticos-online-network
+
+  db_sales:
+    container_name: db_sales
+    image: mysql:8.0.33
+    ports:
+      - "3308:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD_SALES}
+      MYSQL_DATABASE: ${MYSQL_DATABASE_SALES}
+    restart: always
+    volumes:
+      - db_sales_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      timeout: 10s
+      retries: 10
+    networks:
+      - tienda-electrodomesticos-online-network
+
+networks:
+  tienda-electrodomesticos-online-network:
+
+volumes:
+  db_products_data:
+  db_shoppingcart_data:
+  db_sales_data:
